@@ -9,4 +9,10 @@ public interface ConnectionConfigConnector {
     Optional<ConnectionConfig> getConnectionConfig(String configName);
 
     List<ConnectionConfig> getConnectionConfigs();
+
+    ConnectionConfig addConnectionConfig(ConnectionConfig connectionConfig);
+
+    void deleteConnectionConfig(String configName);
+
+    ConnectionConfig editConnectionConfig(ConnectionConfig connectionConfig);
 }

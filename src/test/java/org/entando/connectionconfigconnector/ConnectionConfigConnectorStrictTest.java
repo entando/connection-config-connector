@@ -2,6 +2,7 @@ package org.entando.connectionconfigconnector;
 
 import static org.assertj.core.api.Java6Assertions.assertThat;
 import static org.assertj.core.api.Java6Assertions.fail;
+import static org.mockito.Mockito.mock;
 
 import java.io.File;
 import java.io.IOException;
@@ -12,18 +13,19 @@ import java.util.List;
 import java.util.Optional;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.assertj.core.api.Java6JUnitSoftAssertions;
-import org.assertj.core.groups.Tuple;
 import org.entando.connectionconfigconnector.impl.ConnectionConfigConnectorImpl;
 import org.entando.connectionconfigconnector.model.ConnectionConfig;
+import org.entando.connectionconfigconnector.model.SecurityLevel;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.rules.TemporaryFolder;
+import org.springframework.web.client.RestTemplate;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.Constructor;
 
-public class ConnectionConfigConnectorTest {
+public class ConnectionConfigConnectorStrictTest {
 
     private static final String FOO_CONFIG_NAME = "foo";
     private static final String BAR_CONFIG_NAME = "bar";
@@ -46,7 +48,8 @@ public class ConnectionConfigConnectorTest {
 
     @Before
     public void setUp() {
-        connectionConfigConnector = new ConnectionConfigConnectorImpl(rootDirectory.getRoot().getAbsolutePath());
+        connectionConfigConnector = new ConnectionConfigConnectorImpl(rootDirectory.getRoot().getAbsolutePath(),
+                SecurityLevel.STRICT.toString(), mock(RestTemplate.class));
     }
 
     @Test
@@ -90,34 +93,14 @@ public class ConnectionConfigConnectorTest {
         List<ConnectionConfig> connectionConfigs = connectionConfigConnector.getConnectionConfigs();
 
         // Then
-        assertThat(connectionConfigs)
-                .extracting(ConnectionConfig::getUrl,
-                        ConnectionConfig::getUsername,
-                        ConnectionConfig::getPassword,
-                        ConnectionConfig::getName,
-                        ConnectionConfig::getServiceType)
-                .containsExactlyInAnyOrder(
-                        new Tuple(fooConfig.getUrl(),
-                                fooConfig.getUsername(),
-                                fooConfig.getPassword(),
-                                FOO_CONFIG_NAME,
-                                fooConfig.getServiceType()),
-                        new Tuple(barConfig.getUrl(),
-                                barConfig.getUsername(),
-                                barConfig.getPassword(),
-                                BAR_CONFIG_NAME,
-                                barConfig.getServiceType()),
-                        new Tuple(testConfig.getUrl(),
-                                testConfig.getUsername(),
-                                testConfig.getPassword(),
-                                TEST_CONFIG_NAME,
-                                testConfig.getServiceType()));
+        assertThat(connectionConfigs).containsExactlyInAnyOrder(fooConfig, barConfig, testConfig);
     }
 
     @Test
     public void shouldReturnEmptyListOnError() {
         // Given
-        connectionConfigConnector = new ConnectionConfigConnectorImpl("/wrong_path");
+        connectionConfigConnector = new ConnectionConfigConnectorImpl("/wrong_path", SecurityLevel.STRICT.toString(),
+                mock(RestTemplate.class));
 
         // When
         List<ConnectionConfig> connectionConfigs = connectionConfigConnector.getConnectionConfigs();
@@ -139,7 +122,7 @@ public class ConnectionConfigConnectorTest {
     @Test
     public void shouldRetrieveExtraProperties() throws Exception {
         // Given
-        ConnectionConfig inputConfig = createConnectionConfig();
+        ConnectionConfig inputConfig = createConnectionConfig(null);
         inputConfig.getProperties().put(KEY_1, VALUE_1);
         inputConfig.getProperties().put(KEY_2, VALUE_2);
         createConfigFile(FOO_CONFIG_NAME, inputConfig);
@@ -162,15 +145,17 @@ public class ConnectionConfigConnectorTest {
 
     private ConnectionConfig createConfigFile(String configName, ConnectionConfig connectionConfig) throws IOException {
         File configDirectory = rootDirectory.newFolder(configName);
-        ConnectionConfig newConnectionConfig = connectionConfig == null ? createConnectionConfig() : connectionConfig;
+        ConnectionConfig newConnectionConfig =
+                connectionConfig == null ? createConnectionConfig(configName) : connectionConfig;
         Yaml yaml = new Yaml(new Constructor(ConnectionConfig.class));
         String yamlString = yaml.dump(newConnectionConfig);
         Files.write(Paths.get(configDirectory.getAbsolutePath(), "config.yaml"), yamlString.getBytes());
         return newConnectionConfig;
     }
 
-    private ConnectionConfig createConnectionConfig() {
+    private ConnectionConfig createConnectionConfig(String configName) {
         return ConnectionConfig.builder()
+                .name(configName)
                 .url(RandomStringUtils.randomAlphabetic(100))
                 .username(RandomStringUtils.randomAlphabetic(20))
                 .password(RandomStringUtils.randomAlphabetic(20))
