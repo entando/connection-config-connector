@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Optional;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.assertj.core.api.Java6JUnitSoftAssertions;
+import org.entando.connectionconfigconnector.exception.ConnectionConfigException;
 import org.entando.connectionconfigconnector.impl.ConnectionConfigConnectorImpl;
 import org.entando.connectionconfigconnector.model.ConnectionConfig;
 import org.entando.connectionconfigconnector.model.SecurityLevel;
@@ -25,6 +26,7 @@ import org.springframework.web.client.RestTemplate;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.Constructor;
 
+@SuppressWarnings("PMD.TooManyMethods")
 public class ConnectionConfigConnectorStrictTest {
 
     private static final String FOO_CONFIG_NAME = "foo";
@@ -137,6 +139,29 @@ public class ConnectionConfigConnectorStrictTest {
         } else {
             fail("Connection config is empty!");
         }
+    }
+
+    @Test
+    public void shouldRaiseExceptionWhenAddingOnStrictSecurityLevel() {
+        exception.expect(ConnectionConfigException.class);
+
+        ConnectionConfig connectionConfig = TestHelper.getRandomConnectionConfig();
+        connectionConfigConnector.addConnectionConfig(connectionConfig);
+    }
+
+    @Test
+    public void shouldRaiseExceptionWhenDeletingOnStrictSecurityLevel() {
+        exception.expect(ConnectionConfigException.class);
+
+        connectionConfigConnector.deleteConnectionConfig(RandomStringUtils.randomAlphabetic(10));
+    }
+
+    @Test
+    public void shouldRaiseExceptionWhenEditingOnStrictSecurityLevel() {
+        exception.expect(ConnectionConfigException.class);
+
+        ConnectionConfig connectionConfig = TestHelper.getRandomConnectionConfig();
+        connectionConfigConnector.editConnectionConfig(connectionConfig);
     }
 
     private ConnectionConfig createConfigFile(String configName) throws IOException {

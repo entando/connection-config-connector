@@ -127,6 +127,11 @@ public class ConnectionConfigConnectorImpl implements ConnectionConfigConnector 
 
     @Override
     public ConnectionConfig addConnectionConfig(ConnectionConfig connectionConfig) {
+        if (securityLevel == SecurityLevel.STRICT) {
+            throw new ConnectionConfigException(
+                    String.format("It's not possible to add connection config on %s security level!",
+                            SecurityLevel.STRICT.toString()));
+        }
         try {
             ResponseEntity<ConnectionConfig> response = restTemplate
                     .postForEntity(CONFIG_ENDPOINT, connectionConfig, ConnectionConfig.class);
@@ -140,6 +145,11 @@ public class ConnectionConfigConnectorImpl implements ConnectionConfigConnector 
 
     @Override
     public void deleteConnectionConfig(String configName) {
+        if (securityLevel == SecurityLevel.STRICT) {
+            throw new ConnectionConfigException(
+                    String.format("It's not possible to delete connection config on %s security level!",
+                            SecurityLevel.STRICT.toString()));
+        }
         try {
             restTemplate.delete(CONFIG_ENDPOINT + "/" + configName);
         } catch (HttpServerErrorException e) {
@@ -151,6 +161,11 @@ public class ConnectionConfigConnectorImpl implements ConnectionConfigConnector 
 
     @Override
     public ConnectionConfig editConnectionConfig(ConnectionConfig connectionConfig) {
+        if (securityLevel == SecurityLevel.STRICT) {
+            throw new ConnectionConfigException(
+                    String.format("It's not possible to edit connection config on %s security level!",
+                            SecurityLevel.STRICT.toString()));
+        }
         try {
             HttpEntity<ConnectionConfig> request = new HttpEntity<>(connectionConfig);
             ResponseEntity<ConnectionConfig> response = restTemplate

@@ -10,6 +10,7 @@ public class TestHelper {
 
     public static ConnectionConfig getRandomConnectionConfig() {
         return ConnectionConfig.builder()
+                .url(RandomStringUtils.randomAlphabetic(100))
                 .name(RandomStringUtils.randomAlphabetic(10))
                 .username(RandomStringUtils.randomAlphabetic(10))
                 .password(RandomStringUtils.randomAlphabetic(10))
