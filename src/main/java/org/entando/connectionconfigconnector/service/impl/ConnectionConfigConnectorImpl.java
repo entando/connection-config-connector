@@ -1,4 +1,4 @@
-package org.entando.connectionconfigconnector.impl;
+package org.entando.connectionconfigconnector.service.impl;
 
 import static org.entando.connectionconfigconnector.config.ConnectionConfigConfiguration.CONFIG_REST_TEMPLATE;
 
@@ -14,10 +14,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.entando.connectionconfigconnector.ConnectionConfigConnector;
 import org.entando.connectionconfigconnector.exception.ConnectionConfigException;
 import org.entando.connectionconfigconnector.model.ConnectionConfig;
 import org.entando.connectionconfigconnector.model.SecurityLevel;
+import org.entando.connectionconfigconnector.service.ConnectionConfigConnector;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;

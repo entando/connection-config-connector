@@ -1,12 +1,12 @@
-package org.entando.connectionconfigconnector.impl;
+package org.entando.connectionconfigconnector.service.impl;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import org.entando.connectionconfigconnector.ConnectionConfigConnector;
 import org.entando.connectionconfigconnector.model.ConnectionConfig;
+import org.entando.connectionconfigconnector.service.ConnectionConfigConnector;
 
 public class InMemoryConnectionConfigConnector implements ConnectionConfigConnector {
 

@@ -1,4 +1,4 @@
-package org.entando.connectionconfigconnector;
+package org.entando.connectionconfigconnector.service;
 
 import java.util.List;
 import java.util.Optional;

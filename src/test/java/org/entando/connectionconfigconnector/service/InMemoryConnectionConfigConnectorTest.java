@@ -1,9 +1,10 @@
-package org.entando.connectionconfigconnector;
+package org.entando.connectionconfigconnector.service;
 
 import static org.assertj.core.api.Java6Assertions.assertThat;
 
-import org.entando.connectionconfigconnector.impl.InMemoryConnectionConfigConnector;
+import org.entando.connectionconfigconnector.TestHelper;
 import org.entando.connectionconfigconnector.model.ConnectionConfig;
+import org.entando.connectionconfigconnector.service.impl.InMemoryConnectionConfigConnector;
 import org.junit.Before;
 import org.junit.Test;
 

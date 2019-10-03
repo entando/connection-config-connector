@@ -1,4 +1,4 @@
-package org.entando.connectionconfigconnector;
+package org.entando.connectionconfigconnector.service;
 
 import static org.assertj.core.api.Java6Assertions.assertThat;
 import static org.assertj.core.api.Java6Assertions.fail;
@@ -13,10 +13,11 @@ import java.util.List;
 import java.util.Optional;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.assertj.core.api.Java6JUnitSoftAssertions;
+import org.entando.connectionconfigconnector.TestHelper;
 import org.entando.connectionconfigconnector.exception.ConnectionConfigException;
-import org.entando.connectionconfigconnector.impl.ConnectionConfigConnectorImpl;
 import org.entando.connectionconfigconnector.model.ConnectionConfig;
 import org.entando.connectionconfigconnector.model.SecurityLevel;
+import org.entando.connectionconfigconnector.service.impl.ConnectionConfigConnectorImpl;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;

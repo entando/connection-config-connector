@@ -1,4 +1,4 @@
-package org.entando.connectionconfigconnector;
+package org.entando.connectionconfigconnector.service;
 
 import static org.assertj.core.api.Java6Assertions.assertThat;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.content;
@@ -11,7 +11,8 @@ import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-import org.entando.connectionconfigconnector.config.ConnectionConfigConfiguration;
+import org.entando.connectionconfigconnector.TestHelper;
+import org.entando.connectionconfigconnector.config.TestConnectionConfigConfiguration;
 import org.entando.connectionconfigconnector.exception.ConnectionConfigException;
 import org.entando.connectionconfigconnector.model.ConnectionConfig;
 import org.junit.Before;
@@ -30,7 +31,7 @@ import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestTemplate;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = ConnectionConfigConfiguration.class, properties = "entando.plugin.security.level=LENIENT")
+@SpringBootTest(classes = TestConnectionConfigConfiguration.class, properties = "entando.plugin.security.level=LENIENT")
 @SuppressWarnings("PMD.TooManyMethods")
 public class ConnectionConfigConnectorLenientTest {
 
