@@ -1,5 +1,8 @@
 # Entando Connection Config Connector
 
+[![Build Status](https://jenkins.entandocloud.com/buildStatus/icon?job=de-connection-config-connector-master)](https://jenkins.entandocloud.com/job/de-connection-config-connector-master/)
+[![Coverage Status](https://coveralls.io/repos/github/entando/connection-config-connector/badge.svg?branch=master)](https://coveralls.io/github/entando/connection-config-connector?branch=master)
+
 This library is used to integrate with the Entando Connection Config Sidecar. The sidecar exposes an API to handle
 connection configuration and this library make it possible to integrate with the sidecar without the need to 
 implement the communication to the service.
