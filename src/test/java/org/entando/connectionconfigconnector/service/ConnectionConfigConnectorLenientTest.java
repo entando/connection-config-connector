@@ -7,14 +7,14 @@ import static org.springframework.test.web.client.match.MockRestRequestMatchers.
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withStatus;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 import org.entando.connectionconfigconnector.TestHelper;
 import org.entando.connectionconfigconnector.config.TestConnectionConfigConfiguration;
-import org.entando.connectionconfigconnector.exception.ConnectionConfigException;
+import org.entando.connectionconfigconnector.exception.ConnectionAlreadyExistsException;
+import org.entando.connectionconfigconnector.exception.ConnectionNotFoundException;
 import org.entando.connectionconfigconnector.model.ConnectionConfig;
+import org.entando.web.exception.InternalServerException;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -59,38 +59,34 @@ public class ConnectionConfigConnectorLenientTest {
         // Given
         ConnectionConfig connectionConfig = TestHelper.getRandomConnectionConfig();
         mockServer.expect(ExpectedCount.once(),
-                requestTo(new URI(ENDPOINT + "/" + connectionConfig.getName())))
+                requestTo(ENDPOINT + "/" + connectionConfig.getName()))
                 .andExpect(method(HttpMethod.GET))
                 .andRespond(withStatus(HttpStatus.OK)
                         .contentType(MediaType.APPLICATION_JSON)
                         .body(mapper.writeValueAsString(connectionConfig)));
 
         // When
-        Optional<ConnectionConfig> fromServer = connectionConfigConnector
-                .getConnectionConfig(connectionConfig.getName());
+        ConnectionConfig fromServer = connectionConfigConnector.getConnectionConfig(connectionConfig.getName());
 
         // Then
         mockServer.verify();
-        assertThat(fromServer.isPresent()).isTrue();
-        assertThat(fromServer.get()).isEqualTo(connectionConfig);
+        assertThat(fromServer).isEqualTo(connectionConfig);
     }
 
     @Test
-    public void shouldReturnEmptyForStatusCodeWithError() throws Exception {
-        // Given
+    public void shouldPropagateNotFoundExceptionWhenGetting() throws Exception {
+        expectedException.expect(ConnectionNotFoundException.class);
+        expectedException.expectMessage(ConnectionNotFoundException.MESSAGE_KEY);
+
         ConnectionConfig connectionConfig = TestHelper.getRandomConnectionConfig();
         mockServer.expect(ExpectedCount.once(),
-                requestTo(new URI(ENDPOINT + "/" + connectionConfig.getName())))
+                requestTo(ENDPOINT + "/" + connectionConfig.getName()))
                 .andExpect(method(HttpMethod.GET))
                 .andRespond(withStatus(HttpStatus.NOT_FOUND));
 
-        // When
-        Optional<ConnectionConfig> fromServer = connectionConfigConnector
-                .getConnectionConfig(connectionConfig.getName());
+        connectionConfigConnector.getConnectionConfig(connectionConfig.getName());
 
-        // Then
         mockServer.verify();
-        assertThat(fromServer.isPresent()).isFalse();
     }
 
     @Test
@@ -100,7 +96,7 @@ public class ConnectionConfigConnectorLenientTest {
         ConnectionConfig config2 = TestHelper.getRandomConnectionConfig();
         ConnectionConfig config3 = TestHelper.getRandomConnectionConfig();
         mockServer.expect(ExpectedCount.once(),
-                requestTo(new URI(ENDPOINT)))
+                requestTo(ENDPOINT))
                 .andExpect(method(HttpMethod.GET))
                 .andRespond(withStatus(HttpStatus.OK)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -118,7 +114,7 @@ public class ConnectionConfigConnectorLenientTest {
     public void shouldReturnEmptyListForErrorWhenGettingAllConfigurations() throws Exception {
         // Given
         mockServer.expect(ExpectedCount.once(),
-                requestTo(new URI(ENDPOINT)))
+                requestTo(ENDPOINT))
                 .andExpect(method(HttpMethod.GET))
                 .andRespond(withStatus(HttpStatus.NOT_FOUND));
 
@@ -135,7 +131,7 @@ public class ConnectionConfigConnectorLenientTest {
         // Given
         ConnectionConfig connectionConfig = TestHelper.getRandomConnectionConfig();
         mockServer.expect(ExpectedCount.once(),
-                requestTo(new URI(ENDPOINT)))
+                requestTo(ENDPOINT))
                 .andExpect(method(HttpMethod.POST))
                 .andExpect(content().json(mapper.writeValueAsString(connectionConfig)))
                 .andRespond(withStatus(HttpStatus.CREATED)
@@ -152,11 +148,11 @@ public class ConnectionConfigConnectorLenientTest {
 
     @Test
     public void shouldThrowExceptionForErrorWhenAddingConnectionConfig() throws Exception {
-        expectedException.expect(ConnectionConfigException.class);
+        expectedException.expect(InternalServerException.class);
 
         ConnectionConfig connectionConfig = TestHelper.getRandomConnectionConfig();
         mockServer.expect(ExpectedCount.once(),
-                requestTo(new URI(ENDPOINT)))
+                requestTo(ENDPOINT))
                 .andExpect(method(HttpMethod.POST))
                 .andExpect(content().json(mapper.writeValueAsString(connectionConfig)))
                 .andRespond(withStatus(HttpStatus.INTERNAL_SERVER_ERROR));
@@ -171,7 +167,7 @@ public class ConnectionConfigConnectorLenientTest {
         // Given
         ConnectionConfig connectionConfig = TestHelper.getRandomConnectionConfig();
         mockServer.expect(ExpectedCount.once(),
-                requestTo(new URI(ENDPOINT + "/" + connectionConfig.getName())))
+                requestTo(ENDPOINT + "/" + connectionConfig.getName()))
                 .andExpect(method(HttpMethod.DELETE))
                 .andRespond(withStatus(HttpStatus.OK));
 
@@ -183,12 +179,12 @@ public class ConnectionConfigConnectorLenientTest {
     }
 
     @Test
-    public void shouldThrowExceptionForErrorWhenDeletingConnectionConfig() throws Exception {
-        expectedException.expect(ConnectionConfigException.class);
+    public void shouldThrowExceptionForErrorWhenDeletingConnectionConfig() {
+        expectedException.expect(InternalServerException.class);
 
         ConnectionConfig connectionConfig = TestHelper.getRandomConnectionConfig();
         mockServer.expect(ExpectedCount.once(),
-                requestTo(new URI(ENDPOINT + "/" + connectionConfig.getName())))
+                requestTo(ENDPOINT + "/" + connectionConfig.getName()))
                 .andExpect(method(HttpMethod.DELETE))
                 .andRespond(withStatus(HttpStatus.INTERNAL_SERVER_ERROR));
 
@@ -202,7 +198,7 @@ public class ConnectionConfigConnectorLenientTest {
         // Given
         ConnectionConfig connectionConfig = TestHelper.getRandomConnectionConfig();
         mockServer.expect(ExpectedCount.once(),
-                requestTo(new URI(ENDPOINT)))
+                requestTo(ENDPOINT))
                 .andExpect(method(HttpMethod.PUT))
                 .andExpect(content().json(mapper.writeValueAsString(connectionConfig)))
                 .andRespond(withStatus(HttpStatus.OK)
@@ -219,11 +215,11 @@ public class ConnectionConfigConnectorLenientTest {
 
     @Test
     public void shouldThrowExceptionForErrorWhenEditingConnectionConfig() throws Exception {
-        expectedException.expect(ConnectionConfigException.class);
+        expectedException.expect(InternalServerException.class);
 
         ConnectionConfig connectionConfig = TestHelper.getRandomConnectionConfig();
         mockServer.expect(ExpectedCount.once(),
-                requestTo(new URI(ENDPOINT)))
+                requestTo(ENDPOINT))
                 .andExpect(method(HttpMethod.PUT))
                 .andExpect(content().json(mapper.writeValueAsString(connectionConfig)))
                 .andRespond(withStatus(HttpStatus.INTERNAL_SERVER_ERROR));
@@ -231,5 +227,51 @@ public class ConnectionConfigConnectorLenientTest {
         connectionConfigConnector.editConnectionConfig(connectionConfig);
 
         mockServer.verify();
+    }
+
+    @Test
+    public void shouldPropagateNotFoundExceptionWhenEditing() throws Exception {
+        expectedException.expect(ConnectionNotFoundException.class);
+        expectedException.expectMessage(ConnectionNotFoundException.MESSAGE_KEY);
+
+        ConnectionConfig connectionConfig = TestHelper.getRandomConnectionConfig();
+        mockServer.expect(ExpectedCount.once(),
+                requestTo(ENDPOINT))
+                .andExpect(method(HttpMethod.PUT))
+                .andExpect(content().json(mapper.writeValueAsString(connectionConfig)))
+                .andRespond(withStatus(HttpStatus.NOT_FOUND));
+
+        connectionConfigConnector.editConnectionConfig(connectionConfig);
+
+        mockServer.verify();
+    }
+
+    @Test
+    public void shouldPropagateNotFoundExceptionWhenDeleting() throws Exception {
+        expectedException.expect(ConnectionNotFoundException.class);
+        expectedException.expectMessage(ConnectionNotFoundException.MESSAGE_KEY);
+
+        String configName = "invalid";
+        mockServer.expect(ExpectedCount.once(),
+                requestTo(ENDPOINT + "/" + configName))
+                .andExpect(method(HttpMethod.DELETE))
+                .andRespond(withStatus(HttpStatus.NOT_FOUND));
+
+        connectionConfigConnector.deleteConnectionConfig(configName);
+    }
+
+    @Test
+    public void shouldThrowExceptionWhenAddingNewConnectionWithSameName() throws Exception {
+        expectedException.expect(ConnectionAlreadyExistsException.class);
+        expectedException.expectMessage(ConnectionAlreadyExistsException.MESSAGE_KEY);
+
+        ConnectionConfig connectionConfig = TestHelper.getRandomConnectionConfig();
+        mockServer.expect(ExpectedCount.once(),
+                requestTo(ENDPOINT))
+                .andExpect(method(HttpMethod.POST))
+                .andExpect(content().json(mapper.writeValueAsString(connectionConfig)))
+                .andRespond(withStatus(HttpStatus.CONFLICT));
+
+        connectionConfigConnector.addConnectionConfig(connectionConfig);
     }
 }
