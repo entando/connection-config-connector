@@ -1,7 +1,6 @@
 package org.entando.connectionconfigconnector.service;
 
 import static org.assertj.core.api.Java6Assertions.assertThat;
-import static org.assertj.core.api.Java6Assertions.fail;
 import static org.mockito.Mockito.mock;
 
 import java.io.File;
@@ -10,13 +9,14 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Optional;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.assertj.core.api.Java6JUnitSoftAssertions;
 import org.entando.connectionconfigconnector.TestHelper;
-import org.entando.connectionconfigconnector.exception.ConnectionConfigException;
+import org.entando.connectionconfigconnector.exception.ConnectionNotFoundException;
+import org.entando.connectionconfigconnector.exception.InvalidStrictOperationException;
 import org.entando.connectionconfigconnector.model.ConnectionConfig;
 import org.entando.connectionconfigconnector.model.SecurityLevel;
+import org.entando.connectionconfigconnector.service.impl.ConnectionConfigConnectorFileSystem;
 import org.entando.connectionconfigconnector.service.impl.ConnectionConfigConnectorImpl;
 import org.junit.Before;
 import org.junit.Rule;
@@ -45,14 +45,16 @@ public class ConnectionConfigConnectorStrictTest {
     public Java6JUnitSoftAssertions safely = new Java6JUnitSoftAssertions();
 
     @Rule
-    public ExpectedException exception = ExpectedException.none();
+    public ExpectedException expectedException = ExpectedException.none();
 
     private ConnectionConfigConnector connectionConfigConnector;
 
     @Before
     public void setUp() {
-        connectionConfigConnector = new ConnectionConfigConnectorImpl(rootDirectory.getRoot().getAbsolutePath(),
-                SecurityLevel.STRICT.toString(), mock(RestTemplate.class));
+        ConnectionConfigConnectorFileSystem connectionConfigConnectorFileSystem = new ConnectionConfigConnectorFileSystem(
+                rootDirectory.getRoot().getAbsolutePath());
+        connectionConfigConnector = new ConnectionConfigConnectorImpl(SecurityLevel.STRICT.toString(),
+                mock(RestTemplate.class), connectionConfigConnectorFileSystem);
     }
 
     @Test
@@ -61,28 +63,21 @@ public class ConnectionConfigConnectorStrictTest {
         ConnectionConfig configFile = createConfigFile(FOO_CONFIG_NAME);
 
         // When
-        Optional<ConnectionConfig> connectionConfig = connectionConfigConnector.getConnectionConfig(FOO_CONFIG_NAME);
+        ConnectionConfig connectionConfig = connectionConfigConnector.getConnectionConfig(FOO_CONFIG_NAME);
 
-        // Then
-        if (connectionConfig.isPresent()) {
-            safely.assertThat(connectionConfig.get().getUrl()).isEqualTo(configFile.getUrl());
-            safely.assertThat(connectionConfig.get().getUsername()).isEqualTo(configFile.getUsername());
-            safely.assertThat(connectionConfig.get().getPassword()).isEqualTo(configFile.getPassword());
-            safely.assertThat(connectionConfig.get().getName()).isEqualTo(FOO_CONFIG_NAME);
-            safely.assertThat(connectionConfig.get().getServiceType()).isEqualTo(configFile.getServiceType());
-        } else {
-            fail("Connection config is empty!");
-        }
+        safely.assertThat(connectionConfig.getUrl()).isEqualTo(configFile.getUrl());
+        safely.assertThat(connectionConfig.getUsername()).isEqualTo(configFile.getUsername());
+        safely.assertThat(connectionConfig.getPassword()).isEqualTo(configFile.getPassword());
+        safely.assertThat(connectionConfig.getName()).isEqualTo(FOO_CONFIG_NAME);
+        safely.assertThat(connectionConfig.getServiceType()).isEqualTo(configFile.getServiceType());
     }
 
     @Test
-    public void shouldReturnEmptyForConfigNotFound() {
-        // Given file is no there
-        // When
-        Optional<ConnectionConfig> connectionConfig = connectionConfigConnector.getConnectionConfig(FOO_CONFIG_NAME);
+    public void shouldThrowConnectionNotFoundException() {
+        expectedException.expect(ConnectionNotFoundException.class);
+        expectedException.expectMessage(ConnectionNotFoundException.MESSAGE_KEY);
 
-        // Then
-        assertThat(connectionConfig.isPresent()).isFalse();
+        connectionConfigConnector.getConnectionConfig(FOO_CONFIG_NAME);
     }
 
     @Test
@@ -102,8 +97,10 @@ public class ConnectionConfigConnectorStrictTest {
     @Test
     public void shouldReturnEmptyListOnError() {
         // Given
-        connectionConfigConnector = new ConnectionConfigConnectorImpl("/wrong_path", SecurityLevel.STRICT.toString(),
-                mock(RestTemplate.class));
+        ConnectionConfigConnectorFileSystem connectionConfigConnectorFileSystem = new ConnectionConfigConnectorFileSystem(
+                "/wrong_path");
+        connectionConfigConnector = new ConnectionConfigConnectorImpl(SecurityLevel.STRICT.toString(),
+                mock(RestTemplate.class), connectionConfigConnectorFileSystem);
 
         // When
         List<ConnectionConfig> connectionConfigs = connectionConfigConnector.getConnectionConfigs();
@@ -131,20 +128,17 @@ public class ConnectionConfigConnectorStrictTest {
         createConfigFile(FOO_CONFIG_NAME, inputConfig);
 
         // When
-        Optional<ConnectionConfig> connectionConfig = connectionConfigConnector.getConnectionConfig(FOO_CONFIG_NAME);
+        ConnectionConfig connectionConfig = connectionConfigConnector.getConnectionConfig(FOO_CONFIG_NAME);
 
-        if (connectionConfig.isPresent()) {
-            assertThat(connectionConfig.get().getProperties().size()).isEqualTo(2);
-            assertThat(connectionConfig.get().getProperties().get(KEY_1)).isEqualTo(VALUE_1);
-            assertThat(connectionConfig.get().getProperties().get(KEY_2)).isEqualTo(VALUE_2);
-        } else {
-            fail("Connection config is empty!");
-        }
+        assertThat(connectionConfig.getProperties().size()).isEqualTo(2);
+        assertThat(connectionConfig.getProperties().get(KEY_1)).isEqualTo(VALUE_1);
+        assertThat(connectionConfig.getProperties().get(KEY_2)).isEqualTo(VALUE_2);
     }
 
     @Test
     public void shouldRaiseExceptionWhenAddingOnStrictSecurityLevel() {
-        exception.expect(ConnectionConfigException.class);
+        expectedException.expect(InvalidStrictOperationException.class);
+        expectedException.expectMessage(InvalidStrictOperationException.MESSAGE_KEY);
 
         ConnectionConfig connectionConfig = TestHelper.getRandomConnectionConfig();
         connectionConfigConnector.addConnectionConfig(connectionConfig);
@@ -152,14 +146,16 @@ public class ConnectionConfigConnectorStrictTest {
 
     @Test
     public void shouldRaiseExceptionWhenDeletingOnStrictSecurityLevel() {
-        exception.expect(ConnectionConfigException.class);
+        expectedException.expect(InvalidStrictOperationException.class);
+        expectedException.expectMessage(InvalidStrictOperationException.MESSAGE_KEY);
 
         connectionConfigConnector.deleteConnectionConfig(RandomStringUtils.randomAlphabetic(10));
     }
 
     @Test
     public void shouldRaiseExceptionWhenEditingOnStrictSecurityLevel() {
-        exception.expect(ConnectionConfigException.class);
+        expectedException.expect(InvalidStrictOperationException.class);
+        expectedException.expectMessage(InvalidStrictOperationException.MESSAGE_KEY);
 
         ConnectionConfig connectionConfig = TestHelper.getRandomConnectionConfig();
         connectionConfigConnector.editConnectionConfig(connectionConfig);

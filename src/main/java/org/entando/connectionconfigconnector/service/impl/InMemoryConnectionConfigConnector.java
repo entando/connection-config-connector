@@ -3,8 +3,9 @@ package org.entando.connectionconfigconnector.service.impl;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import org.entando.connectionconfigconnector.exception.ConnectionAlreadyExistsException;
+import org.entando.connectionconfigconnector.exception.ConnectionNotFoundException;
 import org.entando.connectionconfigconnector.model.ConnectionConfig;
 import org.entando.connectionconfigconnector.service.ConnectionConfigConnector;
 
@@ -13,8 +14,12 @@ public class InMemoryConnectionConfigConnector implements ConnectionConfigConnec
     private final Map<String, ConnectionConfig> connectionConfigMap = new ConcurrentHashMap<>();
 
     @Override
-    public Optional<ConnectionConfig> getConnectionConfig(String configName) {
-        return Optional.ofNullable(connectionConfigMap.get(configName));
+    public ConnectionConfig getConnectionConfig(String configName) {
+        ConnectionConfig connectionConfig = connectionConfigMap.get(configName);
+        if (connectionConfig == null) {
+            throw new ConnectionNotFoundException();
+        }
+        return connectionConfig;
     }
 
     @Override
@@ -24,16 +29,28 @@ public class InMemoryConnectionConfigConnector implements ConnectionConfigConnec
 
     @Override
     public ConnectionConfig addConnectionConfig(ConnectionConfig connectionConfig) {
+        ConnectionConfig retrieved = connectionConfigMap.get(connectionConfig.getName());
+        if (retrieved != null) {
+            throw new ConnectionAlreadyExistsException();
+        }
         return connectionConfigMap.put(connectionConfig.getName(), connectionConfig);
     }
 
     @Override
     public void deleteConnectionConfig(String configName) {
+        ConnectionConfig retrieved = connectionConfigMap.get(configName);
+        if (retrieved == null) {
+            throw new ConnectionNotFoundException();
+        }
         connectionConfigMap.remove(configName);
     }
 
     @Override
     public ConnectionConfig editConnectionConfig(ConnectionConfig connectionConfig) {
+        ConnectionConfig retrieved = connectionConfigMap.get(connectionConfig.getName());
+        if (retrieved == null) {
+            throw new ConnectionNotFoundException();
+        }
         return connectionConfigMap.put(connectionConfig.getName(), connectionConfig);
     }
 }
