@@ -7,7 +7,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.HashMap;
 import java.util.List;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.assertj.core.api.Java6JUnitSoftAssertions;
@@ -29,14 +28,6 @@ import org.yaml.snakeyaml.constructor.Constructor;
 
 @SuppressWarnings("PMD.TooManyMethods")
 public class ConnectionConfigConnectorStrictTest {
-
-    private static final String FOO_CONFIG_NAME = "foo";
-    private static final String BAR_CONFIG_NAME = "bar";
-    private static final String TEST_CONFIG_NAME = "test";
-    private static final String KEY_1 = "key1";
-    private static final String KEY_2 = "key2";
-    private static final String VALUE_1 = "value1";
-    private static final String VALUE_2 = "value2";
 
     @Rule
     public TemporaryFolder rootDirectory = new TemporaryFolder();
@@ -60,16 +51,12 @@ public class ConnectionConfigConnectorStrictTest {
     @Test
     public void shouldGetConnectionConfigFromFileSystem() throws Exception {
         // Given
-        ConnectionConfig configFile = createConfigFile(FOO_CONFIG_NAME);
+        ConnectionConfig configFile = createConfigFile();
 
         // When
-        ConnectionConfig connectionConfig = connectionConfigConnector.getConnectionConfig(FOO_CONFIG_NAME);
+        ConnectionConfig connectionConfig = connectionConfigConnector.getConnectionConfig(configFile.getName());
 
-        safely.assertThat(connectionConfig.getUrl()).isEqualTo(configFile.getUrl());
-        safely.assertThat(connectionConfig.getUsername()).isEqualTo(configFile.getUsername());
-        safely.assertThat(connectionConfig.getPassword()).isEqualTo(configFile.getPassword());
-        safely.assertThat(connectionConfig.getName()).isEqualTo(FOO_CONFIG_NAME);
-        safely.assertThat(connectionConfig.getServiceType()).isEqualTo(configFile.getServiceType());
+        safely.assertThat(connectionConfig).isEqualTo(configFile);
     }
 
     @Test
@@ -77,15 +64,15 @@ public class ConnectionConfigConnectorStrictTest {
         expectedException.expect(ConnectionNotFoundException.class);
         expectedException.expectMessage(ConnectionNotFoundException.MESSAGE_KEY);
 
-        connectionConfigConnector.getConnectionConfig(FOO_CONFIG_NAME);
+        connectionConfigConnector.getConnectionConfig(RandomStringUtils.randomAlphabetic(10));
     }
 
     @Test
     public void shouldReturnAllConnectionConfigs() throws Exception {
         // Given
-        ConnectionConfig fooConfig = createConfigFile(FOO_CONFIG_NAME);
-        ConnectionConfig barConfig = createConfigFile(BAR_CONFIG_NAME);
-        ConnectionConfig testConfig = createConfigFile(TEST_CONFIG_NAME);
+        ConnectionConfig fooConfig = createConfigFile();
+        ConnectionConfig barConfig = createConfigFile();
+        ConnectionConfig testConfig = createConfigFile();
 
         // When
         List<ConnectionConfig> connectionConfigs = connectionConfigConnector.getConnectionConfigs();
@@ -120,22 +107,6 @@ public class ConnectionConfigConnectorStrictTest {
     }
 
     @Test
-    public void shouldRetrieveExtraProperties() throws Exception {
-        // Given
-        ConnectionConfig inputConfig = createConnectionConfig(null);
-        inputConfig.getProperties().put(KEY_1, VALUE_1);
-        inputConfig.getProperties().put(KEY_2, VALUE_2);
-        createConfigFile(FOO_CONFIG_NAME, inputConfig);
-
-        // When
-        ConnectionConfig connectionConfig = connectionConfigConnector.getConnectionConfig(FOO_CONFIG_NAME);
-
-        assertThat(connectionConfig.getProperties().size()).isEqualTo(2);
-        assertThat(connectionConfig.getProperties().get(KEY_1)).isEqualTo(VALUE_1);
-        assertThat(connectionConfig.getProperties().get(KEY_2)).isEqualTo(VALUE_2);
-    }
-
-    @Test
     public void shouldRaiseExceptionWhenAddingOnStrictSecurityLevel() {
         expectedException.expect(InvalidStrictOperationException.class);
         expectedException.expectMessage(InvalidStrictOperationException.MESSAGE_KEY);
@@ -161,28 +132,12 @@ public class ConnectionConfigConnectorStrictTest {
         connectionConfigConnector.editConnectionConfig(connectionConfig);
     }
 
-    private ConnectionConfig createConfigFile(String configName) throws IOException {
-        return createConfigFile(configName, null);
-    }
-
-    private ConnectionConfig createConfigFile(String configName, ConnectionConfig connectionConfig) throws IOException {
-        File configDirectory = rootDirectory.newFolder(configName);
-        ConnectionConfig newConnectionConfig =
-                connectionConfig == null ? createConnectionConfig(configName) : connectionConfig;
+    private ConnectionConfig createConfigFile() throws IOException {
+        ConnectionConfig connectionConfig = TestHelper.getRandomConnectionConfig();
+        File configDirectory = rootDirectory.newFolder(connectionConfig.getName());
         Yaml yaml = new Yaml(new Constructor(ConnectionConfig.class));
-        String yamlString = yaml.dump(newConnectionConfig);
+        String yamlString = yaml.dump(connectionConfig);
         Files.write(Paths.get(configDirectory.getAbsolutePath(), "config.yaml"), yamlString.getBytes());
-        return newConnectionConfig;
-    }
-
-    private ConnectionConfig createConnectionConfig(String configName) {
-        return ConnectionConfig.builder()
-                .name(configName)
-                .url(RandomStringUtils.randomAlphabetic(100))
-                .username(RandomStringUtils.randomAlphabetic(20))
-                .password(RandomStringUtils.randomAlphabetic(20))
-                .serviceType(RandomStringUtils.randomAlphabetic(20))
-                .properties(new HashMap<>())
-                .build();
+        return connectionConfig;
     }
 }
