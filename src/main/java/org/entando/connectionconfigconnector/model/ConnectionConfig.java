@@ -12,10 +12,6 @@ import lombok.NoArgsConstructor;
 @Builder
 public class ConnectionConfig {
 
-    private String url;
-    private String username;
-    private String password;
     private String name;
-    private String serviceType;
     private Map<String, String> properties;
 }

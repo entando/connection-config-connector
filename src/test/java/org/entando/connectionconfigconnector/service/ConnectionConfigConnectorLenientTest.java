@@ -9,6 +9,7 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Arrays;
 import java.util.List;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.entando.connectionconfigconnector.TestHelper;
 import org.entando.connectionconfigconnector.config.TestConnectionConfigConfiguration;
 import org.entando.connectionconfigconnector.exception.ConnectionAlreadyExistsException;
@@ -74,7 +75,7 @@ public class ConnectionConfigConnectorLenientTest {
     }
 
     @Test
-    public void shouldPropagateNotFoundExceptionWhenGetting() throws Exception {
+    public void shouldPropagateNotFoundExceptionWhenGetting() {
         expectedException.expect(ConnectionNotFoundException.class);
         expectedException.expectMessage(ConnectionNotFoundException.MESSAGE_KEY);
 
@@ -111,7 +112,7 @@ public class ConnectionConfigConnectorLenientTest {
     }
 
     @Test
-    public void shouldReturnEmptyListForErrorWhenGettingAllConfigurations() throws Exception {
+    public void shouldReturnEmptyListForErrorWhenGettingAllConfigurations() {
         // Given
         mockServer.expect(ExpectedCount.once(),
                 requestTo(ENDPOINT))
@@ -163,7 +164,7 @@ public class ConnectionConfigConnectorLenientTest {
     }
 
     @Test
-    public void shouldDeleteConnectionConfigUsingEndpoint() throws Exception {
+    public void shouldDeleteConnectionConfigUsingEndpoint() {
         // Given
         ConnectionConfig connectionConfig = TestHelper.getRandomConnectionConfig();
         mockServer.expect(ExpectedCount.once(),
@@ -247,7 +248,7 @@ public class ConnectionConfigConnectorLenientTest {
     }
 
     @Test
-    public void shouldPropagateNotFoundExceptionWhenDeleting() throws Exception {
+    public void shouldPropagateNotFoundExceptionWhenDeleting() {
         expectedException.expect(ConnectionNotFoundException.class);
         expectedException.expectMessage(ConnectionNotFoundException.MESSAGE_KEY);
 
@@ -273,5 +274,18 @@ public class ConnectionConfigConnectorLenientTest {
                 .andRespond(withStatus(HttpStatus.CONFLICT));
 
         connectionConfigConnector.addConnectionConfig(connectionConfig);
+    }
+
+    @Test
+    public void shouldHandleExceptionWhenGettingConnectionConfig() {
+        expectedException.expect(InternalServerException.class);
+
+        String configName = RandomStringUtils.randomAlphabetic(10);
+        mockServer.expect(ExpectedCount.once(),
+                requestTo(ENDPOINT + "/" + configName))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(withStatus(HttpStatus.BAD_REQUEST));
+
+        connectionConfigConnector.getConnectionConfig(configName);
     }
 }
